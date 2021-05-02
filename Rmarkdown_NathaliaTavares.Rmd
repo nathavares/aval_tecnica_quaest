@@ -1,0 +1,106 @@
+---
+title: "Avaliação Técnica Estágio Processamento - QUAEST"
+author: "Nathália de Oliveira Moraes Tavares"
+date: "01/05/2021"
+output:
+  html_document: default
+  pdf_document: default
+  word_document: default
+---
+![](http://quaest.com.br/assets/images/logo-black.png){ width=10% }
+
+O objetivo desta avaliação foi realizar uma análise de survey, presente no banco de dados 'bd_surveyquaest.xlsx' em formato excel, que serviu como base para encontrar as respostas das perguntas propostas.  
+Segue abaixo uma descrição das etapas e os códigos em R que utilizei para resolver a avaliação:
+
+###### Carreguei os pacotes utilizados
+```{r, message = FALSE, warning = FALSE}
+library(tidyverse)
+library(haven)
+library(descr)
+library(readr)
+library(readxl)
+library(ggplot2)
+```
+###### Importei a base de dados do Excel
+```{r, message = FALSE, warning = FALSE}
+bd_surveyquaest <- read_xlsx("bd_surveyquaest.xlsx")
+glimpse(bd_surveyquaest)
+```
+###### Criei um backup do banco de dados (apenas por precaução)
+```{r, message = FALSE, warning = FALSE}
+bk = bd_surveyquaest 
+```
+###### Selecionei as varáveis `sexo`, `aval_gov` e `voto1` (ncessárias para responder às perguntas)
+```{r, message = FALSE, warning = FALSE}
+bd = bd_surveyquaest %>% select(sexo, voto1, aval_gov)
+head(bd)
+```
+###### Transformei as colunas `votos1`, `sexo` e `aval_gov` em `factor` e uilizei `labels` para facilitar e organizar a visualização
+```{r, message = FALSE, warning = FALSE}
+bd$voto1 <- factor(bd$voto1, levels = c("Candidato 1", "Candidato 2", "Candidato 3", "Candidato 4", "Candidato 5", "Candidato 6", 
+                                        "Candidato 7", "Candidato 8", "Candidato 9", "Candidato 10", "Candidato 11", "Candidato 12",
+                                        "Candidato 13", "Candidato 14", "Ninguém/Branco/Nulo", "NS/NR"),
+                   labels = c("Candidato 1", "Candidato 2", "Candidato 3", "Candidato 4", "Candidato 5", "Candidato 6", 
+                              "Candidato 7", "Candidato 8", "Candidato 9", "Candidato 10", "Candidato 11", "Candidato 12",
+                              "Candidato 13", "Candidato 14", "Ninguém/Branco/Nulo", "NS/NR"))
+class(bd$voto1)  
+
+bd$sexo <- factor(bd$sexo, levels = c("Masculino", "Feminino"),
+                   labels = c("Masculino", "Feminino"))
+class(bd$sexo)  
+
+bd$aval_gov <- factor(bd$aval_gov, levels = c("Ótima", "Boa", "Regular positiva", 
+                                          "Regular negativa", "Ruim", "Péssima", "NS/NR"),
+                  labels = c("Ótima", "Boa", "Regular positiva", 
+                             "Regular negativa", "Ruim", "Péssima", "NS/NR"))
+class(bd$aval_gov)
+```
+
+#### Pergunta 1) Qual o % de intenção de voto para cada candidato?
+Utilizei a função `freq()` para obter a frequência e a porcentagem de cada candidato da coluna `voto1` e armazenei o resultado na variàvel `R1`.
+Depois a transformei em data frame para facilitar a utilização e visualização.
+```{r, message = FALSE, warning = FALSE}
+R1 <- freq(bd$voto1, plot = FALSE)
+R1 <- as.data.frame(R1)
+```
+A porcentagem de cada candidato pode ser observada na coluna "Percentual" da tabela abaixo:
+```{r, message = FALSE, warning = FALSE}
+formattable::formattable(R1)
+```
+Abaixo demonstro os resultados em um gráfico de barras, utilizando a função `ggplot()`:
+```{r, message = FALSE, warning = FALSE}
+ggplot(bd, aes(x=voto1)) + 
+  geom_bar() + 
+  labs(x="Candidatos", y="Porcentagem", title="% de Intenção de voto por candidato") +
+  scale_y_continuous(labels=scales::percent) +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+         
+```  
+
+O candidato com a maior porcentagem de intenções de voto é o Candidato 2, com 52,3%.    
+Em segundo lugar ficou o candidato 1, com 4,2% e em terceiro o candidato 8, com 2,6%. Em seguida o candidato 5, teve 2.5% e o candidato 10, 2,0% das intenções de voto.  
+Os candidatos 9, 3, 4 e 6 tiveram, respectivamente, 1,9%, 1,6%, 1,2% e 1,0%.    
+Os candidatos com menor porcentagem de intenções de voto foram: o candidato 7, com 0,7%, os candidatos 12 e 14, ambos com 0,6% e por fim, os candidatos 11 e 13 com 0,3%.    
+14% dos entrevistados não responderam ou não souberam responder(NS/NR) e 14,2% não votariam em ninguém ou votariam em Branco/Nulo.  
+  
+  
+#### Pergunta 2) Qual o candidato com maior % de intenção de voto entre as MULHERES?
+Utilizei a função `prop.table()` para obter a porcentagem das variàveis `sexo` e `voto1` e conseguir compará-las.   
+Desta forma, o R retorna a porcentagem de votos para cada candidato de acordo com o sexo do/da respondente.
+```{r, message = FALSE, warning = FALSE}
+prop.table(table(bd$voto1, bd$sexo),2) * 100
+```
+
+De acordo com a coluna "Feminino" do output acima, o candidato com maior poncentagem de intenção de votos entre as Mulheres é o **Candidato 2 com 54,12%**.  
+  
+  
+#### Pergunta 3) O candidato que lidera as intenções de voto é o candidato de situação ou oposição ao governo?
+Utilizei a função `prop.table()` para obter e comparar a porcentagem das variáveis `voto1` e `aval_gov`.   
+Para a variável `voto1` fiz um teste lógico de igualdade para selecionar apenas as intenções de voto no "Candidato 2" (maior porcentagem de intenções de voto). 
+```{r}
+prop.table(table(bd$voto1 == "Candidato 2", bd$aval_gov), 2) * 100 
+```
+
+
+Considerando a linha de dados `TRUE`, que obdece ao teste lógico de `bd$voto1 == "Candidato 2"`, observa-se que 85,08% dos respondentes que prentendem votar no Candidato 2 consideram o atual governo como "Ótimo", 67,72% como "Bom" e 33,71% consideram como "Regular positivo", formado maioria entre os entrevistados. Contra apenas 9,45% que consideram "Regular negativo", 2,04% consideram "Ruim" e 1,56% consideram a atuação "Péssima".
+Dessa forma, conclui-se que o Candidato 2 não é de oposição e sim **situação em relação ao governo atual**.
